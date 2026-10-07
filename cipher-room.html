@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Cipher Room</title><style>
+:root{--bg:#f3f1fb;--cd:#fff;--tx:#1b1830;--mu:#6a6585;--ac:#5b3fd6;--am:#f5a524;--bd:#dcd6f3;--gn:#2fb36b;--rd:#e5484d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e0c1a;--cd:#181530;--tx:#ece9ff;--mu:#9a95bd;--ac:#8f78ff;--bd:#2d2858}}
+:root[data-theme="dark"]{--bg:#0e0c1a;--cd:#181530;--tx:#ece9ff;--mu:#9a95bd;--ac:#8f78ff;--bd:#2d2858}
+html,body{margin:0}body{background:var(--bg);color:var(--tx);font-family:system-ui,sans-serif}
+.app{max-width:440px;margin:auto;padding:16px;display:grid;gap:12px}
+h1{font-size:19px;margin:0}h2{font-size:12px;margin:0 0 8px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em}
+.box{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px}
+.vault{text-align:center}
+.ct{font:700 26px ui-monospace,Menlo,monospace;letter-spacing:.15em;word-break:break-all}
+.pv{font:700 20px ui-monospace,Menlo,monospace;letter-spacing:.15em;color:var(--ac);margin-top:6px;word-break:break-all}
+.dial{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px}
+.dial b{font-size:34px;min-width:60px}
+.dial button{width:48px;height:48px;font-size:22px;padding:0;flex:none}
+input[type=range]{width:100%;accent-color:var(--ac);margin-top:8px}
+.team{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mem{border:2px solid var(--bd);border-radius:12px;padding:10px;text-align:center;transition:.2s}
+.mem.on{border-color:var(--ac);box-shadow:0 0 14px var(--ac)}
+.mem .e{font-size:26px}.mem small{display:block;color:var(--mu);margin:2px 0 8px;font-size:11px}
+.lamp{width:46px;height:46px;border-radius:50%;margin:0 auto 6px;background:var(--bd);transition:background .08s,box-shadow .08s}
+.lamp.f{background:var(--am);box-shadow:0 0 24px 8px var(--am)}
+.ch{display:flex;gap:8px}
+button{font:inherit;flex:1;border:1px solid var(--bd);background:var(--cd);color:var(--tx);border-radius:10px;padding:9px 6px;cursor:pointer;font-size:13px}
+button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.go{background:var(--gn);color:#fff;border:0;width:100%;font-weight:700;padding:12px;margin-top:10px}
+#lg{font-size:13px;display:grid;gap:5px;max-height:130px;overflow:auto}
+#lg div{background:var(--bg);border-radius:8px;padding:6px 8px}
+.hint{font-size:11px;color:var(--mu);margin-top:6px;text-align:center}
+.shake{animation:s .35s}@keyframes s{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+</style></head><body><div class="app">
+<h1>🔐 Cipher Room <span style="font-size:11px;color:var(--mu);font-weight:400" id="rd">· Ronde 1/3</span></h1>
+
+<div class="box vault" id="vt"><h2>Vault terkunci</h2>
+<div class="ct" id="ct"></div><div class="pv" id="pv"></div>
+<div class="dial"><button id="dm">−</button><b id="dv">0</b><button id="dp">+</button></div>
+<input type="range" id="sl" min="0" max="25" value="0">
+<div class="hint">Kamu Decoder: geser angka kunci, tapi kuncinya ada di tim</div>
+<button class="go" id="go">🔓 Buka vault</button></div>
+
+<div class="box"><h2>Tim kamu</h2><div class="team">
+<div class="mem" id="m1"><div class="lamp" id="lp"></div><div class="e">📡 Rani</div><small>Pemegang kunci</small><button id="ak">Minta kunci</button></div>
+<div class="mem" id="m2"><div class="e">🗣️ Bayu</div><small>Pemberi petunjuk</small><div style="height:52px"></div><button id="ah">Minta petunjuk</button></div></div>
+<h2 style="margin-top:12px">Cara menerima sinyal kunci</h2>
+<div class="ch"><button class="on" id="cv">👁️ Cahaya</button><button class="on" id="ca">🔊 Nada</button><button class="on" id="ch">📳 Getar</button></div>
+<div class="hint">Kunci dikirim sebagai jumlah kedipan/nada/getar. Hitung sendiri, lalu pilih kanal yang paling nyaman.</div></div>
+
+<div class="box"><h2>Obrolan tim</h2><div id="lg"></div></div>
+</div><script>
+const $=id=>document.getElementById(id);let ac;
+const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+function tone(f,d=.2,v=.1,t=0,ty="sine"){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(ac.destination);const s=ac.currentTime+t;o.start(s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.stop(s+d)}catch(e){}}
+const R=[{w:"FIREWALL",k:3,h:"Penjaga gerbang jaringan, 8 huruf."},{w:"PHISHING",k:7,h:"Penipuan lewat pesan umpan, 8 huruf."},{w:"RANSOMWARE",k:5,h:"Malware yang menyandera data, 10 huruf."}];
+const enc=(w,k)=>[...w].map(c=>String.fromCharCode((c.charCodeAt(0)-65+k)%26+65)).join("");
+const dec=(c,v)=>[...c].map(x=>String.fromCharCode((x.charCodeAt(0)-65-v+26)%26+65)).join("");
+let r=0,v=0,busy=false;const ch={v:1,a:1,h:1};
+const log=(w,t)=>{const d=document.createElement("div");d.innerHTML=`<b>${w}:</b> ${t}`;$("lg").prepend(d)};
+const on=(id,ms=1800)=>{$(id).classList.add("on");setTimeout(()=>$(id).classList.remove("on"),ms)};
+function setV(n){v=Math.max(0,Math.min(25,n));$("dv").textContent=v;$("sl").value=v;$("pv").textContent=dec($("ct").textContent,v);vib(8);tone(300+v*15,.05,.04)}
+function load(){const q=R[r];$("ct").textContent=enc(q.w,q.k);$("rd").textContent=`· Ronde ${r+1}/${R.length}`;setV(0);log("Sistem",`Vault ${r+1} terkunci. Teks terenkripsi: ${enc(q.w,q.k)}`)}
+$("dm").onclick=()=>setV(v-1);$("dp").onclick=()=>setV(v+1);$("sl").oninput=e=>setV(+e.target.value);
+[["cv","v"],["ca","a"],["ch","h"]].forEach(([id,k])=>$(id).onclick=()=>{ch[k]=ch[k]?0:1;$(id).classList.toggle("on",!!ch[k])});
+$("ak").onclick=()=>{if(busy)return;if(!ch.v&&!ch.a&&!ch.h){log("Sistem","Pilih minimal satu kanal sinyal.");return}
+busy=true;const k=R[r].k;on("m1",k*500+600);log("Rani","Mengirim kunci lewat kanal pilihanmu. Hitung sinyalnya!");
+if(ch.h)vib(Array.from({length:k},()=>[120,380]).flat());
+for(let i=0;i<k;i++){setTimeout(()=>{if(ch.v){$("lp").classList.add("f");setTimeout(()=>$("lp").classList.remove("f"),180)}if(ch.a)tone(620,.18,.12)},600+i*500)}
+setTimeout(()=>busy=false,k*500+700)};
+$("ah").onclick=()=>{const h=R[r].h;on("m2",2500);log("Bayu",h);vib(20);tone(480,.1,.08);try{if(ch.a){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(h);u.lang="id-ID";speechSynthesis.speak(u)}}catch(e){}};
+$("go").onclick=()=>{const q=R[r];if(v===q.k){tone(523,.15,.1);tone(659,.15,.1,.15);tone(784,.3,.1,.3);vib([60,40,60,40,200]);log("Tim",`🎉 Vault terbuka! Kata: ${q.w}`);r++;
+if(r>=R.length){$("vt").innerHTML=`<h2>Misi selesai</h2><div class="ct">🏆</div><div class="hint" style="font-size:13px">Semua vault terbuka berkat kerja sama tim: kamu mendecode, Rani memegang kunci, Bayu memberi petunjuk.</div>`;return}
+setTimeout(load,1200)}
+else{$("vt").classList.add("shake");setTimeout(()=>$("vt").classList.remove("shake"),400);tone(140,.4,.15,0,"sawtooth");vib([200,80,200]);log("Sistem","❌ Kunci salah. Minta kunci atau petunjuk ke tim.")}};
+load();
+</script></body></html>
